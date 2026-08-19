@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bedrock Crew — Join the crew list</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --basalt:#17191A;--basalt-2:#20242A;--surface:#23282E;--granite:#5E6468;
+    --quarry:#C6C3BD;--chalk:#F4F2ED;--hivis:#C6E000;--hivis-dim:#A9BE00;
+    --line:rgba(244,242,237,.14);--line-2:rgba(244,242,237,.24);--danger:#FF7A6B;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{height:100%}
+  body{font-family:'Archivo',system-ui,sans-serif;background:var(--basalt);color:var(--chalk);-webkit-font-smoothing:antialiased;min-height:100dvh;display:flex;flex-direction:column}
+  .mono{font-family:'Space Mono',monospace}
+
+  .bar{padding:20px 24px 0;flex-shrink:0}
+  .bar .r1{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+  .brandmark{display:flex;align-items:center;gap:10px}
+  .brandmark .bm-strata{display:flex;flex-direction:column;gap:2px}
+  .brandmark .bm-strata span{width:22px;height:3px;border-radius:1px;background:var(--granite);opacity:.6}
+  .brandmark .bm-strata span.seam{background:var(--hivis);opacity:1;height:4px}
+  .brandmark .bm-word{font-weight:900;font-size:15px;text-transform:uppercase;letter-spacing:-.02em;line-height:1}
+  .brandmark .bm-word .c{color:var(--hivis)}
+  .counter{font-family:'Space Mono',monospace;font-size:12px;color:var(--granite);letter-spacing:1px}
+  .track{display:flex;gap:3px}
+  .track .seg{flex:1;height:5px;border-radius:2px;background:var(--line);overflow:hidden;position:relative}
+  .track .seg .fill{position:absolute;inset:0;background:var(--hivis);transform:scaleX(0);transform-origin:left;transition:transform .45s cubic-bezier(.4,0,.2,1)}
+  .track .seg.done .fill{transform:scaleX(1)}
+  .track .seg.active .fill{transform:scaleX(.5);background:var(--hivis-dim)}
+
+  .stage{flex:1;display:flex;align-items:center;justify-content:center;padding:24px}
+  .card{width:100%;max-width:520px}
+  .step{display:none}
+  .step.show{display:block}
+  @media(prefers-reduced-motion:no-preference){
+    .step.show{animation:rise .42s cubic-bezier(.2,.7,.2,1)}
+    @keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+  }
+  .eyebrow{font-family:'Space Mono',monospace;font-size:11px;letter-spacing:2.5px;text-transform:uppercase;color:var(--hivis);margin-bottom:16px}
+  .q{font-weight:800;font-size:clamp(25px,6vw,36px);line-height:1.07;letter-spacing:-.02em;margin-bottom:12px}
+  .hint{font-size:15px;color:var(--quarry);margin-bottom:24px;max-width:430px}
+
+  input[type=text],input[type=tel],input[type=email]{width:100%;background:var(--surface);border:1.5px solid var(--line-2);border-radius:12px;color:var(--chalk);font-family:inherit;font-size:20px;font-weight:500;padding:18px;outline:none;transition:border-color .18s,box-shadow .18s}
+  input::placeholder{color:var(--granite)}
+  input:focus{border-color:var(--hivis);box-shadow:0 0 0 4px rgba(198,224,0,.14)}
+  .field+.field{margin-top:14px}
+  .field label{display:block;font-size:12px;letter-spacing:1px;text-transform:uppercase;color:var(--granite);margin-bottom:8px;font-family:'Space Mono',monospace}
+
+  .opts{display:flex;flex-direction:column;gap:10px}
+  .opt{display:flex;align-items:center;gap:14px;width:100%;text-align:left;background:var(--surface);border:1.5px solid var(--line-2);border-radius:12px;color:var(--chalk);font-family:inherit;font-size:17px;font-weight:600;padding:16px 18px;cursor:pointer;transition:border-color .16s,background .16s,transform .08s}
+  .opt:hover{background:#282e35}
+  .opt:active{transform:scale(.99)}
+  .opt .dot{width:22px;height:22px;border-radius:50%;border:2px solid var(--granite);flex-shrink:0;position:relative;transition:border-color .16s}
+  .opt.sel{border-color:var(--hivis);background:rgba(198,224,0,.10)}
+  .opt.sel .dot{border-color:var(--hivis);background:var(--hivis)}
+  .opt.sel .dot::after{content:"";position:absolute;inset:4px;border-radius:50%;background:var(--basalt)}
+  .opt.multi .dot{border-radius:6px}
+  .opt.multi.sel .dot::after{content:"\2713";inset:0;background:none;color:var(--basalt);font-size:14px;font-weight:900;display:flex;align-items:center;justify-content:center}
+
+  .rate-toggle{display:flex;gap:6px;background:var(--surface);border:1.5px solid var(--line-2);border-radius:12px;padding:5px;margin-bottom:22px;width:fit-content}
+  .rate-toggle button{font-family:inherit;font-weight:700;font-size:14px;color:var(--quarry);background:none;border:none;padding:9px 20px;border-radius:8px;cursor:pointer;transition:background .16s,color .16s}
+  .rate-toggle button.on{background:var(--hivis);color:var(--basalt)}
+  .rate-out{font-weight:900;font-size:52px;letter-spacing:-.03em;margin:2px 0 4px}
+  .rate-out .u{color:var(--hivis)}
+  .rate-out .per{font-size:22px;color:var(--granite);font-weight:500}
+  .rate-sub{font-size:13px;color:var(--granite);font-family:'Space Mono',monospace;margin-bottom:22px}
+  input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:8px;border-radius:6px;background:var(--surface);outline:none;border:1px solid var(--line-2)}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:30px;height:30px;border-radius:50%;background:var(--hivis);border:4px solid var(--basalt);cursor:pointer;box-shadow:0 0 0 1.5px var(--hivis)}
+  input[type=range]::-moz-range-thumb{width:26px;height:26px;border-radius:50%;background:var(--hivis);border:4px solid var(--basalt);cursor:pointer}
+  .rate-scale{display:flex;justify-content:space-between;font-family:'Space Mono',monospace;font-size:11px;color:var(--granite);margin-top:10px}
+
+  .toggle{display:flex;gap:16px;align-items:flex-start;background:var(--surface);border:1.5px solid var(--line-2);border-radius:12px;padding:20px;cursor:pointer;transition:border-color .16s,background .16s}
+  .toggle.on{border-color:var(--hivis);background:rgba(198,224,0,.10)}
+  .toggle .sw{width:52px;height:30px;border-radius:20px;background:var(--granite);flex-shrink:0;position:relative;transition:background .2s}
+  .toggle.on .sw{background:var(--hivis)}
+  .toggle .sw::after{content:"";position:absolute;top:3px;left:3px;width:24px;height:24px;border-radius:50%;background:var(--chalk);transition:transform .2s}
+  .toggle.on .sw::after{transform:translateX(22px);background:var(--basalt)}
+  .toggle .tt{font-size:15px;font-weight:600}
+  .toggle .ts{font-size:13px;color:var(--quarry);font-weight:400;margin-top:3px}
+
+  .err{color:var(--danger);font-size:13.5px;margin-top:12px;min-height:18px;font-weight:500}
+  .nav{display:flex;gap:12px;margin-top:24px;align-items:center}
+  .btn{font-family:inherit;font-weight:700;font-size:17px;border-radius:12px;padding:16px 26px;cursor:pointer;border:none;transition:transform .08s,background .16s}
+  .btn:active{transform:scale(.98)}
+  .btn-go{background:var(--hivis);color:var(--basalt);flex:1;display:flex;align-items:center;justify-content:center;gap:10px}
+  .btn-go:hover{background:#d3ee14}
+  .btn-back{background:transparent;color:var(--quarry);border:1.5px solid var(--line-2);padding:16px 20px}
+  .btn-back:hover{color:var(--chalk)}
+  .hidden{display:none!important}
+
+  .big-strata{display:flex;flex-direction:column;gap:4px;margin-bottom:26px}
+  .big-strata span{width:56px;height:8px;border-radius:2px;background:var(--granite);opacity:.5}
+  .big-strata span:nth-child(1){opacity:.28}.big-strata span:nth-child(2){opacity:.4}.big-strata span:nth-child(3){opacity:.55}.big-strata span:nth-child(4){opacity:.7}
+  .big-strata span.seam{background:var(--hivis);opacity:1;height:10px}
+  .intro h1{font-weight:900;font-size:clamp(38px,9vw,60px);line-height:.94;letter-spacing:-.03em;text-transform:uppercase;margin-bottom:18px}
+  .intro h1 .c{color:var(--hivis)}
+  .intro p{font-size:18px;color:var(--quarry);margin-bottom:28px;max-width:420px}
+  .intro .facts{display:flex;gap:8px 22px;flex-wrap:wrap;font-family:'Space Mono',monospace;font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--granite);margin-bottom:32px}
+
+  .summary{background:var(--surface);border:1px solid var(--line-2);border-radius:14px;padding:6px 20px;margin:22px 0}
+  .summary .sr{display:flex;justify-content:space-between;gap:16px;padding:11px 0;border-bottom:1px solid var(--line);font-size:15px}
+  .summary .sr:last-child{border-bottom:none}
+  .summary .sr .l{color:var(--granite);font-family:'Space Mono',monospace;font-size:12px;letter-spacing:.5px;text-transform:uppercase;flex-shrink:0}
+  .summary .sr .v{font-weight:600;text-align:right}
+  .done-actions{display:flex;flex-direction:column;gap:12px}
+  .wa{background:var(--hivis);color:var(--basalt);display:flex;align-items:center;justify-content:center;gap:12px;text-decoration:none;font-weight:800;font-size:18px;padding:18px;border-radius:12px;transition:transform .08s,background .16s}
+  .wa:active{transform:scale(.98)}
+  .wa:hover{background:#d3ee14}
+  .restart{background:transparent;border:1.5px solid var(--line-2);color:var(--quarry);font-weight:600;font-size:15px;padding:14px;border-radius:12px;cursor:pointer;font-family:inherit}
+
+  .foot{flex-shrink:0;text-align:center;padding:16px;font-family:'Space Mono',monospace;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--granite)}
+</style>
+</head>
+<body>
+
+<div class="bar">
+  <div class="r1">
+    <div class="brandmark">
+      <div class="bm-strata"><span></span><span></span><span class="seam"></span></div>
+      <div class="bm-word">Bedrock<span class="c">Crew</span></div>
+    </div>
+    <div class="counter" id="counter"></div>
+  </div>
+  <div class="track" id="track"></div>
+</div>
+
+<div class="stage"><div class="card" id="card"></div></div>
+<div class="foot">The people your projects are built on · bedrockcrew.com</div>
+
+<script>
+const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwTkr-r2ldAoDtBj05faoVXXAKlwwVMY84E0q5hjAdjNnMWWRCAThDqFsCLBj5bhLml/exec";
+
+/* ============================================================
+   CONFIG — set your WhatsApp number (country code, no + or spaces)
+   UK 07700 900123  ->  447700900123
+   ============================================================ */
+const CONFIG = { whatsapp: "440000000000" };
+
+const state = {
+  name:"", trade:"", tradeOther:"", experience:"", tickets:[], base:"",
+  transport:"", travel:"", available:"", payTypes:[], rate:220, rateUnit:"day",
+  rightToWork:"", phone:"", email:"", consent:false
+};
+
+const steps = [
+  { type:"intro" },
+  { type:"text", key:"name", eyebrow:"About you", q:"First up — what should we call you?", placeholder:"Your name", required:true, err:"Pop your name in so we know who we're talking to." },
+  { type:"single", key:"trade", eyebrow:"Your trade", q:"What's your trade?", required:true, err:"Pick the one that fits you best.",
+    options:[{v:"Electrician"},{v:"Solar PV installer"},{v:"Both"},{v:"Something else", other:true}] },
+  { type:"single", key:"experience", eyebrow:"Experience", q:"How long have you been in the trade?", required:true, err:"Give us a rough idea.",
+    options:[{v:"Apprentice / trainee"},{v:"1–2 years"},{v:"3–5 years"},{v:"5–10 years"},{v:"10+ years"}] },
+  { type:"multi", key:"tickets", eyebrow:"Tickets", q:"Which tickets do you hold?", required:true, err:"Please select at least one option.", hint:"Tap all that apply — no worries if you're still working towards some.",
+    options:[{v:"ECS / JIB card"},{v:"18th Edition"},{v:"CSCS"},{v:"NVQ Level 3"},{v:"MCS (solar)"},{v:"IPAF / PASMA"},{v:"None yet"}] },
+  { type:"text", key:"base", eyebrow:"Where you are", q:"Where are you based?", placeholder:"Town or postcode", required:true, err:"A town or postcode helps us match you to nearby work." },
+  { type:"single", key:"transport", eyebrow:"Getting there", q:"Have you got your own transport?", required:true, err:"Let us know so we can match the right sites.",
+    options:[{v:"Own vehicle + full licence"},{v:"Full licence, no vehicle"},{v:"Neither yet"}] },
+  { type:"single", key:"travel", eyebrow:"Getting there", q:"How far will you travel for the right job?", required:true, err:"Give us a rough radius.",
+    options:[{v:"Up to 10 miles"},{v:"Up to 20 miles"},{v:"Up to 30 miles"},{v:"40+ miles"},{v:"Wherever the work is"}] },
+  { type:"single", key:"available", eyebrow:"Timing", q:"When could you start?", required:true, err:"Let us know your rough timing.",
+    options:[{v:"Right away"},{v:"Within a week"},{v:"2–4 weeks"},{v:"Just keeping an eye out"}] },
+  { type:"multi", key:"payTypes", eyebrow:"Getting paid", q:"How are you set up to get paid?", required:true, err:"Tap at least one — or 'Not sure yet'.",
+    hint:"Tap any you're open to. Not sure what these mean? Just pick 'Not sure yet' and we'll talk it through.",
+    options:[{v:"PAYE"},{v:"CIS (self-employed)"},{v:"Umbrella"},{v:"Ltd company"},{v:"Not sure yet"}] },
+  { type:"rate", key:"rate", eyebrow:"Your rate", q:"What rate are you after?", hint:"Ballpark's fine — we'll always be straight with you on what's realistic." },
+  { type:"single", key:"rightToWork", eyebrow:"Right to work", q:"Can you work in the UK?", required:true, err:"We'll need this before we can put you forward.",
+    hint:"Standard check — every firm asks it before a start date.",
+    options:[{v:"Yes — UK / Irish or settled"},{v:"Yes — visa with work rights"},{v:"Not yet / need sponsorship"}] },
+  { type:"contact", eyebrow:"Staying in touch", q:"Best way to reach you?", hint:"We'll only ever use this for genuine roles that fit." },
+  { type:"consent", eyebrow:"One last thing", q:"Okay for us to keep your details and send you matching work?", err:"We'll need this to add you to the list — you can ask us to remove them any time." },
+  { type:"done" }
+];
+
+const qSteps = steps.filter(s=>!["intro","done"].includes(s.type));
+let i = 0;
+const card=document.getElementById('card'), track=document.getElementById('track'), counter=document.getElementById('counter');
+qSteps.forEach(()=>{const s=document.createElement('div');s.className='seg';s.innerHTML='<div class="fill"></div>';track.appendChild(s);});
+const segs=[...track.children];
+
+function updateProgress(){
+  const step=steps[i], qi=qSteps.indexOf(step);
+  segs.forEach((s,idx)=>{s.classList.remove('done','active');
+    if(qi===-1){ if(step.type==='done') s.classList.add('done'); }
+    else { if(idx<qi)s.classList.add('done'); else if(idx===qi)s.classList.add('active'); }});
+  counter.textContent = qi>=0 ? String(qi+1).padStart(2,'0')+" / "+String(qSteps.length).padStart(2,'0') : (step.type==='done'?"DONE":"");
+}
+
+function render(){
+  const step=steps[i]; updateProgress(); let html='';
+
+  if(step.type==='intro'){
+    html=`<div class="step show intro">
+      <div class="big-strata"><span></span><span></span><span></span><span></span><span class="seam"></span></div>
+      <h1>Get on the<br>crew <span class="c">list.</span></h1>
+      <p>A few quick questions so we only ever send you work that actually fits. Takes about a minute.</p>
+      <div class="facts"><span>M62 CORRIDOR</span><span>ELECTRICAL · SOLAR PV</span><span>REAL JOBS ONLY</span></div>
+      <div class="nav"><button class="btn btn-go" onclick="next()">Let's go &rarr;</button></div></div>`;
+  }
+  else if(step.type==='text'){
+    html=`<div class="step show"><div class="eyebrow">${step.eyebrow}</div><div class="q">${step.q}</div>
+      <input type="text" id="inp" value="${esc(state[step.key])}" placeholder="${step.placeholder}" autocomplete="off">
+      <div class="err" id="err"></div>${navHtml()}</div>`;
+  }
+  else if(step.type==='single'){
+    html=`<div class="step show"><div class="eyebrow">${step.eyebrow}</div><div class="q">${step.q}</div>
+      ${step.hint?`<div class="hint">${step.hint}</div>`:''}
+      <div class="opts">${step.options.map(o=>`<button class="opt ${state[step.key]===o.v?'sel':''}" onclick="pickSingle('${step.key}','${esc(o.v)}',${!!o.other})"><span class="dot"></span><span>${o.v}</span></button>`).join('')}</div>
+      ${step.key==='trade'?`<div id="otherWrap" class="${state.trade==='Something else'?'':'hidden'}" style="margin-top:12px"><input type="text" id="otherInp" value="${esc(state.tradeOther)}" placeholder="Which trade?" autocomplete="off"></div>`:''}
+      <div class="err" id="err"></div>${navHtml(true)}</div>`;
+  }
+  else if(step.type==='multi'){
+    html=`<div class="step show"><div class="eyebrow">${step.eyebrow}</div><div class="q">${step.q}</div>
+      ${step.hint?`<div class="hint">${step.hint}</div>`:''}
+      <div class="opts">${step.options.map(o=>`<button class="opt multi ${state[step.key].includes(o.v)?'sel':''}" onclick="toggleMulti('${step.key}','${esc(o.v)}')"><span class="dot"></span><span>${o.v}</span></button>`).join('')}</div>
+      <div class="err" id="err"></div>${navHtml()}</div>`;
+  }
+  else if(step.type==='rate'){
+    const isDay=state.rateUnit==='day';
+    html=`<div class="step show"><div class="eyebrow">${step.eyebrow}</div><div class="q">${step.q}</div>
+      <div class="rate-toggle">
+        <button class="${isDay?'on':''}" onclick="setUnit('day')">Day rate</button>
+        <button class="${!isDay?'on':''}" onclick="setUnit('hour')">Hourly</button></div>
+      <div class="rate-out"><span class="u">£</span><span id="rateVal">${state.rate}</span><span class="per">/${isDay?'day':'hr'}</span></div>
+      <div class="rate-sub">${step.hint}</div>
+      <input type="range" id="rate" min="${isDay?120:12}" max="${isDay?350:35}" step="${isDay?10:1}" value="${state.rate}" oninput="document.getElementById('rateVal').textContent=this.value;state.rate=+this.value">
+      <div class="rate-scale"><span>£${isDay?120:12}</span><span>£${isDay?'350+':'35+'}</span></div>${navHtml()}</div>`;
+  }
+  else if(step.type==='contact'){
+    html=`<div class="step show"><div class="eyebrow">${step.eyebrow}</div><div class="q">${step.q}</div>
+      <div class="hint">${step.hint}</div>
+      <div class="field"><label>Phone / WhatsApp</label><input type="tel" id="phone" value="${esc(state.phone)}" placeholder="07…" autocomplete="off"></div>
+      <div class="field"><label>Email <span style="text-transform:none">(optional)</span></label><input type="email" id="email" value="${esc(state.email)}" placeholder="you@email.com" autocomplete="off"></div>
+      <div class="err" id="err"></div>${navHtml()}</div>`;
+  }
+  else if(step.type==='consent'){
+    html=`<div class="step show"><div class="eyebrow">${step.eyebrow}</div><div class="q">${step.q}</div>
+      <div class="toggle ${state.consent?'on':''}" id="consentBox" onclick="toggleConsent()"><div class="sw"></div>
+        <div><div class="tt">Yes, keep me on the list</div><div class="ts">We'll only send genuine roles that fit your trade and patch. Ask us to remove your details any time.</div></div></div>
+      <div class="err" id="err"></div>${navHtml(false,"Finish &rarr;")}</div>`;
+  }
+  else if(step.type==='done'){
+    const t=state.trade==='Something else'?(state.tradeOther||'Other'):state.trade;
+    const rows=[['Name',state.name],['Trade',t],['Experience',state.experience],
+      ['Tickets',state.tickets.length?state.tickets.join(', '):'—'],['Based',state.base],
+      ['Transport',state.transport],['Travel',state.travel],['Available',state.available],
+      ['Pay type',state.payTypes.length?state.payTypes.join(', '):'—'],
+      ['Rate','£'+state.rate+'/'+(state.rateUnit==='day'?'day':'hr')],
+      ['Right to work',state.rightToWork],['Phone',state.phone],['Email',state.email||'—']];
+    html=`<div class="step show"><div class="big-strata"><span></span><span></span><span></span><span></span><span class="seam"></span></div>
+      <div class="eyebrow">You're on the list</div>
+      <div class="q">Nice one, ${esc(state.name.split(' ')[0]||'')}. You're on the crew list.</div>
+      <p class="hint">Tap below to send it over — we'll be in touch the moment the right work lands.</p>
+      <div class="summary">${rows.map(r=>`<div class="sr"><span class="l">${r[0]}</span><span class="v">${esc(r[1])}</span></div>`).join('')}</div>
+      <div class="done-actions">
+        <button class="wa" id="submitBtn" onclick="submitForm()">Send to Bedrock Crew &rarr;</button>
+        <button class="restart" onclick="restart()">Start again</button>
+      </div>
+      <div class="small" id="submitStatus"></div></div>`;
+  }
+
+  card.innerHTML=html;
+  const first=card.querySelector('#inp,#phone');
+  if(first)setTimeout(()=>first.focus(),120);
+  card.querySelectorAll('input[type=text],input[type=tel],input[type=email]').forEach(inp=>{
+    inp.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();next();}});});
+  
+}
+
+function pickSingle(key,val,isOther){
+  state[key]=val;
+
+  // Update only the option buttons instead of re-rendering the whole page.
+  // This prevents the page/card from blinking when an option is selected.
+  const buttons=[...document.querySelectorAll('.opt')];
+
+  buttons.forEach(button=>{
+    const label=button.querySelector('span:last-child');
+    const isSelected=label && label.textContent.trim()===val;
+
+    if(isSelected){
+      button.classList.add('sel');
+    }else{
+      button.classList.remove('sel');
+    }
+  });
+
+  if(isOther){
+    const oi=document.getElementById('otherInp');
+    if(oi)setTimeout(()=>oi.focus(),140);
+  }
+}
+function toggleMulti(key,val){
+  const arr=state[key], idx=arr.indexOf(val);
+  const none = key==='tickets'?'None yet':'Not sure yet';
+
+  if(val===none){
+    state[key]=idx>-1?[]:[none];
+  }else{
+    if(idx>-1){
+      arr.splice(idx,1);
+    }else{
+      const n=arr.indexOf(none);
+      if(n>-1)arr.splice(n,1);
+      arr.push(val);
+    }
+  }
+
+  // Update only the option buttons — never re-render the page.
+  const buttons=[...document.querySelectorAll('.opt')];
+  buttons.forEach(button=>{
+    const label=button.querySelector('span:last-child');
+    if(!label)return;
+    const option=label.textContent.trim();
+    button.classList.toggle('sel',state[key].includes(option));
+  });
+
+  if(key==='tickets'){
+    const nextBtn=document.getElementById('nextBtn');
+    if(nextBtn) nextBtn.disabled = state.tickets.length===0;
+    const e=document.getElementById('err');
+    if(e && state.tickets.length>0) e.textContent='';
+  }
+}
+function setUnit(u){
+  if(state.rateUnit===u)return;
+  state.rateUnit=u;
+  state.rate=u==='day'?220:18;
+
+  const buttons=[...document.querySelectorAll('.rate-toggle button')];
+  buttons.forEach(button=>{
+    const isDay=button.textContent.trim()==='Day rate';
+    button.classList.toggle('on',(u==='day')===isDay);
+  });
+
+  const rateVal=document.getElementById('rateVal');
+  const rateInput=document.querySelector('input[type="range"]');
+  const per=document.querySelector('.rate-out .per');
+  const scale=document.querySelector('.rate-scale');
+
+  if(rateVal)rateVal.textContent=state.rate;
+  if(rateInput){
+    rateInput.min=u==='day'?120:12;
+    rateInput.max=u==='day'?500:50;
+    rateInput.step=u==='day'?10:1;
+    rateInput.value=state.rate;
+  }
+  if(per)per.textContent='/'+(u==='day'?'day':'hr');
+  if(scale)scale.innerHTML='<span>£'+(u==='day'?120:12)+'</span><span>£'+(u==='day'?'500+':'50+')+'</span>';
+}
+function toggleConsent(){ state.consent=!state.consent; document.getElementById('consentBox').classList.toggle('on',state.consent); const e=document.getElementById('err'); if(e)e.textContent=''; }
+
+function navHtml(x,goLabel){
+  const isRequiredTickets = steps[i] && steps[i].key === 'tickets';
+  const disabled = isRequiredTickets && (!Array.isArray(state.tickets) || state.tickets.length === 0) ? ' disabled' : '';
+  return `<div class="nav">${i>1?'<button class="btn btn-back" onclick="prev()">&larr;</button>':''}<button id="nextBtn" class="btn btn-go" onclick="next()"${disabled}>${goLabel||'Next &rarr;'}</button></div>`;
+}
+
+function validate(){
+  const step=steps[i], err=()=>document.getElementById('err');
+  if(step.type==='text'){ const v=document.getElementById('inp').value.trim(); state[step.key]=v; if(step.required&&!v){err().textContent=step.err;return false;} }
+  if(step.type==='single'){
+    if(step.key==='trade'&&state.trade==='Something else'){ const oi=document.getElementById('otherInp'); if(oi)state.tradeOther=oi.value.trim(); }
+    if(step.required&&!state[step.key]){err().textContent=step.err;return false;}
+    if(step.key==='trade'&&state.trade==='Something else'&&!state.tradeOther){err().textContent="Let us know which trade.";return false;}
+  }
+  if(step.type==='multi'&&step.required){
+    if(!Array.isArray(state[step.key])||state[step.key].length===0){
+      err().textContent=step.err||"Please select at least one option.";
+      return false;
+    }
+  }
+  if(step.type==='contact'){
+    state.phone=document.getElementById('phone').value.trim(); state.email=document.getElementById('email').value.trim();
+    if(!state.phone){err().textContent="We'll need a number to reach you.";return false;}
+    if(state.phone.replace(/\D/g,'').length<7){err().textContent="That number looks a little short — mind checking it?";return false;}
+  }
+  if(step.type==='consent'&&!state.consent){err().textContent=step.err;return false;}
+  return true;
+}
+function next(){
+  // Hard-stop the Tickets page until at least one option is selected.
+  // This check is intentionally independent of the generic validator.
+  if(steps[i] && steps[i].key==='tickets' && (!Array.isArray(state.tickets) || state.tickets.length===0)){
+    const e=document.getElementById('err');
+    if(e){
+      e.textContent='Please select at least one option.';
+      e.style.display='block';
+    }
+    return false;
+  }
+
+  if(!validate())return false;
+
+  if(i<steps.length-1){
+    i++;
+    render();
+  }
+  return true;
+}
+function prev(){ if(i>0){i--;render();} }
+function restart(){ Object.assign(state,{name:"",trade:"",tradeOther:"",experience:"",tickets:[],base:"",transport:"",travel:"",available:"",payTypes:[],rate:220,rateUnit:"day",rightToWork:"",phone:"",email:"",consent:false}); i=0; render(); }
+
+function waLink(){
+  const t=state.trade==='Something else'?(state.tradeOther||'Other'):state.trade;
+  const msg=`New candidate — Bedrock Crew
+Name: ${state.name}
+Trade: ${t}
+Experience: ${state.experience}
+Tickets: ${state.tickets.length?state.tickets.join(', '):'—'}
+Based: ${state.base}
+Transport: ${state.transport}
+Travel: ${state.travel}
+Available: ${state.available}
+Pay type: ${state.payTypes.length?state.payTypes.join(', '):'—'}
+Rate: £${state.rate}/${state.rateUnit==='day'?'day':'hr'}
+Right to work: ${state.rightToWork}
+Phone: ${state.phone}
+Email: ${state.email||'—'}`;
+  return `https://wa.me/${CONFIG.whatsapp}?text=${encodeURIComponent(msg)}`;
+}
+
+function submitForm(){
+  const btn=document.getElementById('submitBtn');
+  if(btn){
+    btn.disabled=true;
+    btn.textContent='Sent ✓';
+  }
+
+  const t=state.trade==='Something else'?(state.tradeOther||'Other'):state.trade;
+
+  const data={
+    timestamp:new Date().toISOString(),
+    name:state.name,
+    trade:t,
+    experience:state.experience,
+    tickets:state.tickets.join(', '),
+    base:state.base,
+    transport:state.transport,
+    travel:state.travel,
+    available:state.available,
+    payTypes:state.payTypes.join(', '),
+    rate:`£${state.rate}/${state.rateUnit==='day'?'day':'hr'}`,
+    rightToWork:state.rightToWork,
+    phone:state.phone,
+    email:state.email||''
+  };
+
+  const body=JSON.stringify(data);
+
+  // Send in the background without waiting for the Apps Script response.
+  // This removes the delay caused by waiting for Google's no-cors response.
+  try{
+    if(navigator.sendBeacon){
+      const blob=new Blob([body],{type:'text/plain;charset=UTF-8'});
+      navigator.sendBeacon(APPS_SCRIPT_URL,blob);
+    }else{
+      fetch(APPS_SCRIPT_URL,{
+        method:'POST',
+        mode:'no-cors',
+        headers:{'Content-Type':'text/plain;charset=utf-8'},
+        body:body,
+        keepalive:true
+      }).catch(()=>{});
+    }
+  }catch(e){}
+
+  // Show the original completion wording immediately.
+  setTimeout(()=>{
+    document.getElementById('card').innerHTML=`
+      <div class="step show">
+        <div class="bigmark">✓</div>
+        <div class="eyebrow">Thank you</div>
+        <div class="done-title">You're all set.</div>
+        <p class="hint">Your details have been sent to Bedrock Crew. We'll review your information and contact you if there is a suitable opportunity.</p>
+      </div>`;
+  },120);
+}
+
+function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+render();
+</script>
+</body>
+</html>
